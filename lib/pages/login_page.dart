@@ -79,7 +79,7 @@ class __FormState extends State<_Form> {
 
           //TODO: Crear Boton
           BotonAzul(
-            text: 'Ingrese',
+            text: 'Ingresar',
             onPressed: authService.autenticando ? null :  () async {
                     print(emailCtrl.text);
                     print(passCtrl.text);

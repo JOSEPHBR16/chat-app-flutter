@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:chat_app/helpers/mostrar_alerta.dart';
 import 'package:chat_app/services/auth_service.dart';
 import 'package:chat_app/services/socket_service.dart';
@@ -50,14 +52,12 @@ class _Form extends StatefulWidget {
 }
 
 class __FormState extends State<_Form> {
-
   final nameCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-
     final authService = Provider.of<AuthService>(context);
     final socketService = Provider.of<SocketService>(context);
 
@@ -66,14 +66,13 @@ class __FormState extends State<_Form> {
       padding: EdgeInsets.symmetric(horizontal: 50),
       child: Column(
         children: <Widget>[
-
           CustomInput(
             icon: Icons.perm_identity,
             placeholder: 'Nombre',
             keyboardType: TextInputType.text,
             textController: nameCtrl,
           ),
-          
+
           CustomInput(
             icon: Icons.mail_outline,
             placeholder: 'Correo',
@@ -90,22 +89,67 @@ class __FormState extends State<_Form> {
 
           //TODO: Crear Boton
           BotonAzul(
-            text: 'Ingrese',
-            onPressed: authService.autenticando ? null : () async {
-              print(nameCtrl.text);
-              print(emailCtrl.text);
-              print(passCtrl.text);
+            text: 'Registrarse',
+            onPressed: authService.autenticando
+                ? null
+                : () async {
+                    print(nameCtrl.text);
+                    print(emailCtrl.text);
+                    print(passCtrl.text);
 
-              final registroOk = await authService.register(nameCtrl.text.trim(), emailCtrl.text.trim(), passCtrl.text.trim());
+                    if (nameCtrl.text.isEmpty ||
+                        emailCtrl.text.isEmpty ||
+                        passCtrl.text.isEmpty) {
+                      mostrarAlerta(context, 'Campos vacios',
+                          'Debe rellenar todos los campos');
+                    } else {
+                      if (passCtrl.text.length < 8) {
+                        mostrarAlerta(context, 'Registro Incorrecto',
+                            'Contraseña debe contener 8 caracteres como mínimo.');
+                        return;
+                      } else {
+                        final registroOk = await authService.register(
+                          nameCtrl.text.trim(),
+                          emailCtrl.text.trim(),
+                          passCtrl.text.trim(),
+                        );
+                        
+                        if (registroOk == true) {
+                          socketService.connect();
 
-              if(registroOk == true){
-                socketService.connect();
-                Navigator.pushReplacementNamed(context, 'usuarios');
-              }
-              else{
-                mostrarAlerta(context, 'Registro incorrecto', registroOk);
-              }
-            },
+                          return showDialog(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: Text('Registro Cliente'),
+                              content: Text(
+                                  '¿Desea continuar a la pantalla de chats?'),
+                              actions: <Widget>[
+                                MaterialButton(
+                                  child: Text('Salir'),
+                                  elevation: 5,
+                                  textColor: Colors.blue,
+                                  onPressed: () => exit(0),
+                                ),
+                                MaterialButton(
+                                  child: Text('Si'),
+                                  elevation: 5,
+                                  textColor: Colors.blue,
+                                  onPressed: () =>
+                                      Navigator.pushReplacementNamed(
+                                          context, 'usuarios'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          //Navigator.pushReplacementNamed(context, 'usuarios');
+                        } else {
+                          mostrarAlerta(
+                              context, 'Registro incorrecto', registroOk);
+                        }
+                      }
+                    }
+                  },
           ),
         ],
       ),
